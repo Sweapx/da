@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Cleaning Script · Yuliano Christoper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root, [data-theme="light"] {
+      --bg:         #f7f6f2;
+      --surface:    #ffffff;
+      --border:     rgba(0,0,0,0.08);
+      --text:       #1a1916;
+      --text-muted: #6b6a67;
+      --primary:    #01696f;
+      --token-kw:   #0a66c2;
+      --token-fn:   #7c3aed;
+      --token-str:  #166534;
+      --token-num:  #b45309;
+      --token-cmt:  #6b7280;
+      --token-op:   #c2410c;
+      --copy-bg:    rgba(0,0,0,0.04);
+    }
+
+    [data-theme="dark"] {
+      --bg:         #0e0e0c;
+      --surface:    #161614;
+      --border:     rgba(255,255,255,0.07);
+      --text:       #e2e0dc;
+      --text-muted: #6b6a67;
+      --primary:    #4f98a3;
+      --token-kw:   #79b8ff;
+      --token-fn:   #b392f0;
+      --token-str:  #85e89d;
+      --token-num:  #f9b66d;
+      --token-cmt:  #6a737d;
+      --token-op:   #f97583;
+      --copy-bg:    rgba(255,255,255,0.05);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      backdrop-filter: blur(8px);
+      z-index: 10;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .logo svg { color: var(--primary); }
+
+    .header-right { display: flex; align-items: center; gap: 0.75rem; }
+
+    .badge {
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.2rem 0.5rem;
+      background: var(--copy-bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text-muted);
+    }
+
+    button.theme-toggle {
+      background: var(--copy-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.4rem 0.5rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      transition: color 180ms, background 180ms;
+    }
+    button.theme-toggle:hover { color: var(--text); background: var(--border); }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    .meta {
+      margin-bottom: 1.75rem;
+    }
+
+    .meta h1 {
+      font-size: clamp(1.1rem, 2vw, 1.4rem);
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+      line-height: 1.3;
+    }
+
+    .meta p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      max-width: 60ch;
+      line-height: 1.6;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+    }
+
+    .tag {
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.18rem 0.55rem;
+      background: var(--copy-bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text-muted);
+    }
+
+    /* ── Code Block ── */
+    .code-wrapper {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--copy-bg);
+    }
+
+    .code-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .dots { display: flex; gap: 5px; }
+    .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+    .dot-red    { background: #ff5f57; }
+    .dot-yellow { background: #febc2e; }
+    .dot-green  { background: #28c840; }
+
+    .filename {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .copy-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      font-family: 'Inter', sans-serif;
+      padding: 0.3rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--copy-bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color 180ms, background 180ms;
+    }
+    .copy-btn:hover { color: var(--text); }
+    .copy-btn.copied { color: var(--primary); }
+
+    pre {
+      overflow-x: auto;
+      padding: 1.25rem 1.5rem;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.75;
+      display: block;
+    }
+
+    /* ── Syntax highlighting ── */
+    .kw   { color: var(--token-kw); }
+    .fn   { color: var(--token-fn); }
+    .str  { color: var(--token-str); }
+    .num  { color: var(--token-num); }
+    .cmt  { color: var(--token-cmt); font-style: italic; }
+    .op   { color: var(--token-op); }
+    .var  { color: var(--text); }
+    .punc { color: var(--text-muted); }
+    .sec  { color: var(--text-muted); font-style: italic; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 1.25rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 600px) {
+      main { padding: 1.5rem 1rem 3rem; }
+      pre  { padding: 1rem; }
+      code { font-size: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="#">
+    <svg aria-label="Logo" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+    </svg>
+    DataClean Script
+  </a>
+  <div class="header-right">
+    <span class="badge">Python 3.x</span>
+    <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="meta">
+    <h1>Template Pembersihan Data Raw (Outlier — IQR)</h1>
+    <p>Script Python untuk membersihkan dataset CSV: telaah data, hapus duplikat, isi missing value, deteksi outlier per kolom target, dan ekspor file reguler &amp; VIP.</p>
+    <div class="tags">
+      <span class="tag">pandas</span>
+      <span class="tag">numpy</span>
+      <span class="tag">seaborn</span>
+      <span class="tag">matplotlib</span>
+      <span class="tag">IQR Outlier</span>
+      <span class="tag">Google Colab</span>
+    </div>
+  </div>
+
+  <div class="code-wrapper">
+    <div class="code-header">
+      <div class="code-header-left">
+        <div class="dots">
+          <div class="dot dot-red"></div>
+          <div class="dot dot-yellow"></div>
+          <div class="dot dot-green"></div>
+        </div>
+        <span class="filename">data_cleaning.py</span>
+      </div>
+      <button class="copy-btn" id="copyBtn" onclick="copyCode()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Salin
+      </button>
+    </div>
+    <pre><code id="codeBlock"><span class="kw">import</span> <span class="var">pandas</span> <span class="kw">as</span> <span class="var">pd</span>
+<span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+<span class="kw">import</span> <span class="var">seaborn</span> <span class="kw">as</span> <span class="var">sns</span>
+<span class="kw">import</span> <span class="var">matplotlib</span><span class="punc">.</span><span class="var">pyplot</span> <span class="kw">as</span> <span class="var">plt</span>
+
+<span class="var">sns</span><span class="punc">.</span><span class="fn">set_theme</span><span class="punc">(</span><span class="var">style</span><span class="op">=</span><span class="str">"whitegrid"</span><span class="punc">)</span>
+
+<span class="cmt"># ==============================================================================</span>
+<span class="cmt"># 1. KONFIGURASI AWAL</span>
+<span class="cmt"># ==============================================================================</span>
+<span class="var">NAMA_FILE</span> <span class="op">=</span> <span class="str">'dataset_raw.csv'</span>
+
+<span class="cmt"># GUNAKAN KURUNG SIKU [] JIKA LEBIH DARI SATU KOLOM</span>
+<span class="cmt"># Contoh 1 kolom  : KOLOM_TARGET = ['Sales']</span>
+<span class="cmt"># Contoh banyak   : KOLOM_TARGET = ['Sales', 'Profit', 'Quantity']</span>
+<span class="var">KOLOM_TARGET</span> <span class="op">=</span> <span class="punc">[</span><span class="str">'Sales'</span><span class="punc">,</span> <span class="str">'Profit'</span><span class="punc">]</span>
+
+<span class="fn">print</span><span class="punc">(</span><span class="str">"Mulai proses data..."</span><span class="punc">)</span>
+
+<span class="cmt"># ==============================================================================</span>
+<span class="cmt"># 2. LOAD DATA</span>
+<span class="cmt"># ==============================================================================</span>
+<span class="var">df</span> <span class="op">=</span> <span class="var">pd</span><span class="punc">.</span><span class="fn">read_csv</span><span class="punc">(</span><span class="var">NAMA_FILE</span><span class="punc">)</span>
+
+<span class="cmt"># ==============================================================================</span>
+<span class="cmt"># 3. TELAAH DATA (DATA UNDERSTANDING)</span>
+<span class="cmt"># ==============================================================================</span>
+<span class="fn">print</span><span class="punc">(</span><span class="str">"\n--- TELAAH DATA ---"</span><span class="punc">)</span>
+<span class="fn">print</span><span class="punc">(</span><span class="var">f</span><span class="str">"Shape: {df.shape}"</span><span class="punc">)</span>
+<span class="fn">print</span><span class="punc">(</span><span class="str">"\nInfo Data:"</span><span class="punc">)</span>
+<span class="var">df</span><span class="punc">.</span><span class="fn">info</span><span class="punc">()</span>
+<span class="fn">print</span><span class="punc">(</span><span class="str">"\nStatistik Numerik:"</span><span class="punc">)</span>
+<span class="fn">display</span><span class="punc">(</span><span class="var">df</span><span class="punc">.</span><span class="fn">describe</span><span class="punc">())</span>
+
+<span class="cmt"># ==============================================================================</span>
+<span class="cmt"># 4. PERBAIKAN TIPE DATA (JIKA ADA YANG SALAH)</span>
+<span class="cmt"># ==============================================================================</span>
+<span class="cmt"># if 'Postal Code' in df.columns:</span>
+<span class="cmt">#     df['Postal Code'] = df['Postal Code'].astype(str)</span>
+<span class="cmt">#     print("\n[INFO] Tipe data 'Postal Code' diubah menjadi teks.")</span>
+
+<span class="var">kolom_numerik</span> <span class="op">=</span> <span class="var">df</span><span class="punc">.</span><span class="fn">select_dtypes</span><span class="punc">(</span><span class="var">include</span><span class="op">=</span><span class="punc">[</span><span class="var">np</span><span class="punc">.</span><span class="var">number</span><span class="punc">]).</span><span class="var">columns</span><span class="punc">.</span><span class="fn">tolist</span><span class="punc">()</span>
+
+<span class="cmt"># ==============================================================================</span>
+<span class="cmt"># 5. HAPUS DUPLIKAT</span>
+<span class="cmt"># ==============================================================================</span>
+<span class="fn">print</span><span class="punc">(</span><span class="str">"\n--- PEMBERSIHAN DATA ---"</span><span class="punc">)</span>
+<span class="var">duplikat</span> <span class="op">=</span> <span class="var">df</span><span class="punc">.</span><span class="fn">duplicated</span><span class="punc">().</span><span class="fn">sum</span><span class="punc">()</span>
+<span class="kw">if</span> <span class="var">duplikat</span> <span class="op">&gt;</span> <span class="num">0</span><span class="punc">:</span>
+    <span class="var">df</span><span class="punc">.</span><span class="fn">drop_duplicates</span><span class="punc">(</span><span class="var">inplace</span><span class="op">=</span><span class="kw">True</span><span class="punc">)</span>
+<span class="fn">print</span><span class="punc">(</span><span class="var">f</span><span class="str">"Duplikat dihapus: {duplikat}"</span><span class="punc">)</span>
+
+<span class="cmt"># ==============================================================================</span>
+<span class="cmt"># 6. ISI MISSING VALUES</span>
+<span class="cmt"># ==============================================================================</span>
+<span class="var">ada_missing</span> <span class="op">=</span> <span class="kw">False</span>
+<span class="kw">for</span> <span class="var">col</span> <span class="kw">in</span> <span class="var">df</span><span class="punc">.</span><span class="var">columns</span><span class="punc">:</span>
+    <span class="var">kosong</span> <span class="op">=</span> <span class="var">df</span><span class="punc">[</span><span class="var">col</span><span class="punc">].</span><span class="fn">isnull</span><span class="punc">().</span><span class="fn">sum</span><span class="punc">()</span>
+    <span class="kw">if</span> <span class="var">kosong</span> <span class="op">&gt;</span> <span class="num">0</span><span class="punc">:</span>
+        <span class="var">ada_missing</span> <span class="op">=</span> <span class="kw">True</span>
+        <span class="kw">if</span> <span class="var">col</span> <span class="kw">in</span> <span class="var">kolom_numerik</span><span class="punc">:</span>
+            <span class="var">df</span><span class="punc">[</span><span class="var">col</span><span class="punc">]</span> <span class="op">=</span> <span class="var">df</span><span class="punc">[</span><span class="var">col</span><span class="punc">].</span><span class="fn">fillna</span><span class="punc">(</span><span class="var">df</span><span class="punc">[</span><span class="var">col</span><span class="punc">].</span><span class="fn">median</span><span class="punc">())</span>
+            <span class="fn">print</span><span class="punc">(</span><span class="var">f</span><span class="str">"Missing value '{col}' diisi median."</span><span class="punc">)</span>
+        <span class="kw">else</span><span class="punc">:</span>
+            <span class="var">df</span><span class="punc">[</span><span class="var">col</span><span class="punc">]</span> <span class="op">=</span> <span class="var">df</span><span class="punc">[</span><span class="var">col</span><span class="punc">].</span><span class="fn">fillna</span><span class="punc">(</span><span class="str">"Unknown"</span><span class="punc">)</span>
+            <span class="fn">print</span><span class="punc">(</span><span class="var">f</span><span class="str">"Missing value '{col}' diisi 'Unknown'."</span><span class="punc">)</span>
+
+<span class="kw">if not</span> <span class="var">ada_missing</span><span class="punc">:</span>
+    <span class="fn">print</span><span class="punc">(</span><span class="str">"Aman, tidak ada missing value."</span><span class="punc">)</span>
+
+<span class="cmt"># ==============================================================================</span>
+<span class="cmt"># 7. OUTLIER (MULTI-KOLOM), TAMPILKAN, &amp; SIMPAN</span>
+<span class="cmt"># ==============================================================================</span>
+<span class="var">kondisi_outlier</span> <span class="op">=</span> <span class="var">pd</span><span class="punc">.</span><span class="fn">Series</span><span class="punc">(</span><span class="kw">False</span><span class="punc">,</span> <span class="var">index</span><span class="op">=</span><span class="var">df</span><span class="punc">.</span><span class="var">index</span><span class="punc">)</span>
+<span class="var">kolom_diproses</span> <span class="op">=</span> <span class="punc">[]</span>
+
+<span class="fn">print</span><span class="punc">(</span><span class="str">"\n--- HASIL OUTLIER ---"</span><span class="punc">)</span>
+<span class="kw">for</span> <span class="var">col</span> <span class="kw">in</span> <span class="var">KOLOM_TARGET</span><span class="punc">:</span>
+    <span class="kw">if</span> <span class="var">col</span> <span class="kw">in</span> <span class="var">df</span><span class="punc">.</span><span class="var">columns</span><span class="punc">:</span>
+        <span class="var">kolom_diproses</span><span class="punc">.</span><span class="fn">append</span><span class="punc">(</span><span class="var">col</span><span class="punc">)</span>
+        <span class="var">Q1</span>         <span class="op">=</span> <span class="var">df</span><span class="punc">[</span><span class="var">col</span><span class="punc">].</span><span class="fn">quantile</span><span class="punc">(</span><span class="num">0.25</span><span class="punc">)</span>
+        <span class="var">Q3</span>         <span class="op">=</span> <span class="var">df</span><span class="punc">[</span><span class="var">col</span><span class="punc">].</span><span class="fn">quantile</span><span class="punc">(</span><span class="num">0.75</span><span class="punc">)</span>
+        <span class="var">IQR</span>        <span class="op">=</span> <span class="var">Q3</span> <span class="op">-</span> <span class="var">Q1</span>
+        <span class="var">batas_atas</span> <span class="op">=</span> <span class="var">Q3</span> <span class="op">+</span> <span class="punc">(</span><span class="num">1.5</span> <span class="op">*</span> <span class="var">IQR</span><span class="punc">)</span>
+
+        <span class="var">kondisi_outlier</span> <span class="op">=</span> <span class="var">kondisi_outlier</span> <span class="op">|</span> <span class="punc">(</span><span class="var">df</span><span class="punc">[</span><span class="var">col</span><span class="punc">]</span> <span class="op">&gt;</span> <span class="var">batas_atas</span><span class="punc">)</span>
+
+        <span class="fn">print</span><span class="punc">(</span><span class="var">f</span><span class="str">"Batas atas '{col}': {batas_atas}"</span><span class="punc">)</span>
+
+        <span class="var">plt</span><span class="punc">.</span><span class="fn">figure</span><span class="punc">(</span><span class="var">figsize</span><span class="op">=</span><span class="punc">(</span><span class="num">8</span><span class="punc">,</span> <span class="num">2</span><span class="punc">))</span>
+        <span class="var">sns</span><span class="punc">.</span><span class="fn">boxplot</span><span class="punc">(</span><span class="var">x</span><span class="op">=</span><span class="var">df</span><span class="punc">[</span><span class="var">col</span><span class="punc">],</span> <span class="var">color</span><span class="op">=</span><span class="str">'skyblue'</span><span class="punc">)</span>
+        <span class="var">plt</span><span class="punc">.</span><span class="fn">title</span><span class="punc">(</span><span class="var">f</span><span class="str">'Boxplot {col}'</span><span class="punc">)</span>
+        <span class="var">plt</span><span class="punc">.</span><span class="fn">show</span><span class="punc">()</span>
+
+<span class="kw">if</span> <span class="fn">len</span><span class="punc">(</span><span class="var">kolom_diproses</span><span class="punc">)</span> <span class="op">&gt;</span> <span class="num">0</span><span class="punc">:</span>
+    <span class="var">df_reguler</span> <span class="op">=</span> <span class="var">df</span><span class="punc">[~</span><span class="var">kondisi_outlier</span><span class="punc">].</span><span class="fn">copy</span><span class="punc">()</span>
+    <span class="var">df_vip</span>     <span class="op">=</span> <span class="var">df</span><span class="punc">[</span><span class="var">kondisi_outlier</span><span class="punc">].</span><span class="fn">copy</span><span class="punc">()</span>
+
+    <span class="fn">print</span><span class="punc">(</span><span class="var">f</span><span class="str">"\nTotal Data Reguler : {df_reguler.shape[0]} baris"</span><span class="punc">)</span>
+    <span class="fn">print</span><span class="punc">(</span><span class="var">f</span><span class="str">"Total Data VIP     : {df_vip.shape[0]} baris"</span><span class="punc">)</span>
+
+    <span class="fn">print</span><span class="punc">(</span><span class="str">"\n--- TAMPILAN DATA BERSIH (REGULER) ---"</span><span class="punc">)</span>
+    <span class="fn">display</span><span class="punc">(</span><span class="var">df_reguler</span><span class="punc">.</span><span class="fn">head</span><span class="punc">())</span>
+
+    <span class="var">df_reguler</span><span class="punc">.</span><span class="fn">to_csv</span><span class="punc">(</span><span class="var">f</span><span class="str">"CLEAN_REG_{NAMA_FILE}"</span><span class="punc">,</span> <span class="var">index</span><span class="op">=</span><span class="kw">False</span><span class="punc">)</span>
+    <span class="var">df_vip</span><span class="punc">.</span><span class="fn">to_csv</span><span class="punc">(</span><span class="var">f</span><span class="str">"CLEAN_VIP_{NAMA_FILE}"</span><span class="punc">,</span> <span class="var">index</span><span class="op">=</span><span class="kw">False</span><span class="punc">)</span>
+    <span class="fn">print</span><span class="punc">(</span><span class="str">"\nFile reguler &amp; VIP berhasil disimpan."</span><span class="punc">)</span>
+
+<span class="kw">else</span><span class="punc">:</span>
+    <span class="fn">print</span><span class="punc">(</span><span class="str">"\nKolom target tidak ditemukan. Outlier dilewati."</span><span class="punc">)</span>
+    <span class="fn">print</span><span class="punc">(</span><span class="str">"\n--- TAMPILAN DATA BERSIH ---"</span><span class="punc">)</span>
+    <span class="fn">display</span><span class="punc">(</span><span class="var">df</span><span class="punc">.</span><span class="fn">head</span><span class="punc">())</span>
+
+    <span class="var">df</span><span class="punc">.</span><span class="fn">to_csv</span><span class="punc">(</span><span class="var">f</span><span class="str">"CLEAN_{NAMA_FILE}"</span><span class="punc">,</span> <span class="var">index</span><span class="op">=</span><span class="kw">False</span><span class="punc">)</span>
+    <span class="fn">print</span><span class="punc">(</span><span class="str">"\nFile bersih berhasil disimpan."</span><span class="punc">)</span></code></pre>
+  </div>
+</main>
+
+<footer>
+  Dibuat oleh Yuliano Christoper &nbsp;·&nbsp; Python Data Cleaning Template
+</footer>
+
+<script>
+  // ── Theme toggle
+  (function(){
+    const btn = document.querySelector('[data-theme-toggle]');
+    const html = document.documentElement;
+    let theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    html.setAttribute('data-theme', theme);
+    updateIcon();
+    btn.addEventListener('click', () => {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', theme);
+      updateIcon();
+    });
+    function updateIcon() {
+      btn.innerHTML = theme === 'dark'
+        ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+        : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    }
+  })();
+
+  // ── Copy button
+  function copyCode() {
+    const raw = `import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.set_theme(style="whitegrid")
+
+# ==============================================================================
+# 1. KONFIGURASI AWAL
+# ==============================================================================
+NAMA_FILE = 'dataset_raw.csv'
+
+# GUNAKAN KURUNG SIKU [] JIKA LEBIH DARI SATU KOLOM
+# Contoh 1 kolom: KOLOM_TARGET = ['Sales']
+# Contoh banyak kolom: KOLOM_TARGET = ['Sales', 'Profit', 'Quantity']
+KOLOM_TARGET = ['Sales', 'Profit'] 
+
+print("Mulai proses data...")
+
+# ==============================================================================
+# 2. LOAD DATA
+# ==============================================================================
+df = pd.read_csv(NAMA_FILE)
+
+# ==============================================================================
+# 3. TELAAH DATA (DATA UNDERSTANDING)
+# ==============================================================================
+print("\\n--- TELAAH DATA ---")
+print(f"Shape: {df.shape}")
+print("\\nInfo Data:")
+df.info()
+print("\\nStatistik Numerik:")
+display(df.describe())
+
+# ==============================================================================
+# 4. PERBAIKAN TIPE DATA (JIKA ADA YANG SALAH)
+# ==============================================================================
+# if 'Postal Code' in df.columns:
+#     df['Postal Code'] = df['Postal Code'].astype(str)
+#     print("\\n[INFO] Tipe data 'Postal Code' diubah menjadi teks.")
+
+kolom_numerik = df.select_dtypes(include=[np.number]).columns.tolist()
+
+# ==============================================================================
+# 5. HAPUS DUPLIKAT
+# ==============================================================================
+print("\\n--- PEMBERSIHAN DATA ---")
+duplikat = df.duplicated().sum()
+if duplikat > 0:
+    df.drop_duplicates(inplace=True)
+print(f"Duplikat dihapus: {duplikat}")
+
+# ==============================================================================
+# 6. ISI MISSING VALUES
+# ==============================================================================
+ada_missing = False
+for col in df.columns:
+    kosong = df[col].isnull().sum()
+    if kosong > 0:
+        ada_missing = True
+        if col in kolom_numerik:
+            df[col] = df[col].fillna(df[col].median())
+            print(f"Missing value '{col}' diisi median.")
+        else:
+            df[col] = df[col].fillna("Unknown")
+            print(f"Missing value '{col}' diisi 'Unknown'.")
+
+if not ada_missing:
+    print("Aman, tidak ada missing value.")
+
+# ==============================================================================
+# 7. OUTLIER (MULTI-KOLOM), TAMPILKAN, & SIMPAN
+# ==============================================================================
+kondisi_outlier = pd.Series(False, index=df.index)
+kolom_diproses = []
+
+print("\\n--- HASIL OUTLIER ---")
+for col in KOLOM_TARGET:
+    if col in df.columns:
+        kolom_diproses.append(col)
+        Q1 = df[col].quantile(0.25)
+        Q3 = df[col].quantile(0.75)
+        IQR = Q3 - Q1
+        batas_atas = Q3 + (1.5 * IQR)
+        
+        kondisi_outlier = kondisi_outlier | (df[col] > batas_atas)
+        
+        print(f"Batas atas '{col}': {batas_atas}")
+        
+        plt.figure(figsize=(8, 2))
+        sns.boxplot(x=df[col], color='skyblue')
+        plt.title(f'Boxplot {col}')
+        plt.show()
+
+if len(kolom_diproses) > 0:
+    df_reguler = df[~kondisi_outlier].copy() 
+    df_vip = df[kondisi_outlier].copy()
+    
+    print(f"\\nTotal Data Reguler: {df_reguler.shape[0]} baris")
+    print(f"Total Data VIP (Terdeteksi Outlier di salah satu kolom target): {df_vip.shape[0]} baris")
+    
+    print("\\n--- TAMPILAN DATA BERSIH (REGULER) ---")
+    display(df_reguler.head())
+    
+    df_reguler.to_csv(f"CLEAN_REG_{NAMA_FILE}", index=False)
+    df_vip.to_csv(f"CLEAN_VIP_{NAMA_FILE}", index=False)
+    print("\\nFile reguler & VIP berhasil disimpan.")
+
+else:
+    print("\\nKolom target tidak ditemukan. Outlier dilewati.")
+    print("\\n--- TAMPILAN DATA BERSIH ---")
+    display(df.head())
+    
+    df.to_csv(f"CLEAN_{NAMA_FILE}", index=False)
+    print("\\nFile bersih berhasil disimpan.")`;
+
+    navigator.clipboard.writeText(raw).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.classList.add('copied');
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Tersalin!`;
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin`;
+      }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
